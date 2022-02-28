@@ -1,5 +1,6 @@
 import './style.css';
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 
 const canvas = document.getElementById('app');
@@ -26,14 +27,42 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.z = 3;
 
 // mesh
-const geometry = new THREE.BoxBufferGeometry(1, 1, 1);
-const material = new THREE.MeshNormalMaterial();
+const geometry = new THREE.PlaneBufferGeometry(10, 10, 100, 100);
+geometry.rotateX(Math.PI * 0.5);
+const material = new THREE.RawShaderMaterial({
+  vertexShader: `
+    attribute vec3 position;
+
+    uniform mat4 projectionMatrix;
+    uniform mat4 viewMatrix;
+    uniform mat4 modelMatrix;
+
+    void main()
+    {
+      gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    precision mediump float;
+
+    void main()
+    {
+      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    }
+  `
+});
 const mesh = new THREE.Mesh(geometry, material);
 scene.add(mesh);
 
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+
 // render
 renderer.setAnimationLoop(time => {
-  mesh.rotation.y = time * 0.001;
+  controls.update();
+  material.uniforms.uTime.value = time;
+  material.needsUpdate = true;
+  // mesh.rotation.y = time * 0.001;
   renderer.render(scene, camera);
 });
 

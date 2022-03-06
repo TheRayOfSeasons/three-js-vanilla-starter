@@ -10,6 +10,7 @@
     "vite": "^2.7.2"
   },
   "dependencies": {
-    "three": "^0.137.5"
+    "three": "^0.137.5",
+    "threenity": "https://github.com/TheRayOfSeasons/Threenity.git"
   }
 }

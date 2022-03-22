@@ -1,5 +1,6 @@
 import { Threenity } from 'threenity';
 import { MainScene } from './scenes/main-scene';
+import { setupMusicForm } from './ui/music-form';;
 
 function bootstrap() {
   const canvas = document.getElementById('app');
@@ -12,4 +13,7 @@ function bootstrap() {
   app.start();
 }
 
-bootstrap();
+document.addEventListener('DOMContentLoaded', () => {
+  setupMusicForm();
+  bootstrap();
+});

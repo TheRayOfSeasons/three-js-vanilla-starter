@@ -4,10 +4,10 @@ import { CameraManager } from './camera-manager';
 
 export class Controls extends MonoBehaviour {
   start() {
-    const canvas = this.managers.canvasManager.canvas;
     const cameraManager = this.getComponent(CameraManager);
     const camera = cameraManager.camera;
-    this.controls = new OrbitControls(camera, canvas);
+    const overlay = document.querySelector('.overlay');
+    this.controls = new OrbitControls(camera, overlay);
     this.controls.enableDamping = true;
   }
 

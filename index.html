@@ -5,10 +5,52 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Three.js Vanilla Starter</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <svg id="sprites" style="display: none;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <symbol id="caret-right" viewBox="0 0 256 512">
+      <path d="M118.6 105.4l128 127.1C252.9 239.6 256 247.8 256 255.1s-3.125 16.38-9.375 22.63l-128 127.1c-9.156 9.156-22.91 11.9-34.88 6.943S64 396.9 64 383.1V128c0-12.94 7.781-24.62 19.75-29.58S109.5 96.23 118.6 105.4z"/>
+    </symbol>
+    <symbol id="pause" viewBox="0 0 320 512">
+      <path d="M272 63.1l-32 0c-26.51 0-48 21.49-48 47.1v288c0 26.51 21.49 48 48 48L272 448c26.51 0 48-21.49 48-48v-288C320 85.49 298.5 63.1 272 63.1zM80 63.1l-32 0c-26.51 0-48 21.49-48 48v288C0 426.5 21.49 448 48 448l32 0c26.51 0 48-21.49 48-48v-288C128 85.49 106.5 63.1 80 63.1z"/>
+    </symbol>
+    <symbol id="caret-down" viewBox="0 0 320 512">
+      <path d="M310.6 246.6l-127.1 128C176.4 380.9 168.2 384 160 384s-16.38-3.125-22.63-9.375l-127.1-128C.2244 237.5-2.516 223.7 2.438 211.8S19.07 192 32 192h255.1c12.94 0 24.62 7.781 29.58 19.75S319.8 237.5 310.6 246.6z"/>
+    </symbol>
+  </svg>
   <main>
+    <div class="ui">
+      <div class="overlay"></div>
+      <div class="ui-component" id="left-actions">
+        <input type="checkbox" id="invert" name="invert" />
+        <label for="invert">Invert?</label>
+      </div>
+      <div class="ui-component" id="right-actions">
+        <div class="select-container">
+          <select id="music-selector">
+            <option value="nocturne">Chopin - Nocturne op.9 No.2</option>
+            <option value="moonlight-sonata">Beethoven - Moonlight Sonata (1st movement)</option>
+            <option value="mitis-mercy">MitiS - Mercy (feat. glasscat) | Proximity</option>
+            <option value="mitis-shattered">MitiS - Shattered (Lyrics) feat. RUNN</option>
+            <option value="what-is-love">Twice - What is Love?</option>
+            <option value="to-my-youth">Bolbbalgan4 볼빨간사춘기  To My Youth 나의 사춘기에</option>
+            <option value="breathe">Lauv - Breathe</option>
+          </select>
+          <svg width="32" height="20">
+            <use href="#caret-down"></use>
+          </svg>
+        </div>
+        <button class="ui-component round" type="button" role="button" id="play">
+          <svg class="play-icon" width="16" height="32" style="display: unset;">
+            <use href="#caret-right"></use>
+          </svg>
+          <svg class="pause-icon" width="16" height="32" style="display: none;">
+            <use href="#pause"></use>
+          </svg>
+        </button>
+      </div>
+    </div>
     <canvas id="app"></canvas>
   </main>
   <script type="module" src="/src/app.js"></script>

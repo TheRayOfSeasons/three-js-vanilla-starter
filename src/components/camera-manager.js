@@ -1,6 +1,6 @@
 import { MonoBehaviour } from 'threenity';
 import { PerspectiveCamera } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { listener } from '../misc/audioListener';
 
 export class CameraManager extends MonoBehaviour {
   /**
@@ -18,7 +18,12 @@ export class CameraManager extends MonoBehaviour {
     );
     this.entity.add(camera);
     this.setAsMainCamera(camera);
-    camera.position.z = 5;
+    camera.position.set(
+      2.3079039992366446,
+      3.4263308268277446,
+      2.816706622180851
+    )
+    camera.add(listener);
     this.camera = camera;
   }
 }

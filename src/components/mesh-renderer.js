@@ -1,3 +1,4 @@
+import { RingBufferGeometry } from 'three';
 import {
   Color,
   DoubleSide,
@@ -24,8 +25,11 @@ export class MeshRenderer extends MonoBehaviour {
     const material = new ShaderMaterial({
       uniforms: {
         uFrequency: { value: [] },
+        uAverageFrequency: { value: 0 },
         uColorA: { value: new Color('#7f2a91') },
         uColorB: { value: new Color('#1af5f5') },
+        uColorC: { value: new Color('#f5f373') },
+        uColorD: { value: new Color('#e680d8') },
         uMaxElevation: { value: 1 },
         uInverted: { value: false, }
       },
@@ -33,9 +37,9 @@ export class MeshRenderer extends MonoBehaviour {
       vertexShader: '' +
         'uniform float uMaxElevation;' +
         'uniform float[64] uFrequency;' +
-        'uniform bool uInverted;' +
         '' +
         'varying float vT;' +
+        'varying float vDistanceT;' +
         '' +
         'void main()' +
         '{' +
@@ -43,23 +47,32 @@ export class MeshRenderer extends MonoBehaviour {
           'float distance = abs(distance(vec2(0.5, 0.5), uv));' +
           'float normalizedDistance = distance / 0.5;' +
           'int index = int(normalizedDistance * 64.0);' +
-          'int inverseIndex = 64 - index;' +
-          'float t = uFrequency[uInverted ? inverseIndex : index] / 255.0;' +
+          'float t = uFrequency[index] / 255.0;' +
           'float elevation = t * uMaxElevation;' +
           'currentPosition.y += smoothstep(0.0, uMaxElevation, elevation);' +
           'gl_Position = projectionMatrix * viewMatrix * modelMatrix * currentPosition;' +
           '' +
           'vT = t;' +
+          'vDistanceT = distance / 0.5;' +
         '}',
       fragmentShader: '' +
+        'uniform float uAverageFrequency;' +
+        'uniform bool uInverted;' +
         'uniform vec3 uColorA;' +
         'uniform vec3 uColorB;' +
+        'uniform vec3 uColorC;' +
+        'uniform vec3 uColorD;' +
         '' +
         'varying float vT;' +
+        'varying float vDistanceT;' +
         '' +
         'void main()' +
         '{' +
-          'vec3 color = mix(uColorA, uColorB, vT);' +
+          'vec3 color1 = uInverted ? uColorB : uColorC;' +
+          'vec3 color2 = uInverted ? uColorC : uColorB;' +
+          'vec3 gradientColor1 = mix(color1, color2, vDistanceT);' +
+          'vec3 gradientColor2 = mix(gradientColor1, uColorD, uAverageFrequency / 255.0);' +
+          'vec3 color = mix(uColorA, gradientColor2, vT);' +
           'gl_FragColor = vec4(color, 1.0);' +
         '}',
       side: DoubleSide
@@ -68,7 +81,8 @@ export class MeshRenderer extends MonoBehaviour {
     this.entity.add(this.mesh);
 
     frequencySubject.subscribe({
-      next: ({ frequency }) => {
+      next: ({ average, frequency }) => {
+        material.uniforms.uAverageFrequency.value = average;
         material.uniforms.uFrequency.value = frequency;
         material.needsUpdate = true;
       }

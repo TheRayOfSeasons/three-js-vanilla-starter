@@ -6,4 +6,29 @@ html, body {
 canvas {
   width: 100%;
   height: 100vh;
+  cursor: none;
+}
+
+#mouse-follower {
+  position: absolute;
+  z-index: 1;
+  height: 50px;
+  width: 50px;
+  border: 5px solid #bf0be8;
+  border-radius: 50%;
+  top: 0;
+  left: 0;
+  transition: transform 0.1s;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#mouse-follower .cursor {
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  background: #bf0be8;
 }

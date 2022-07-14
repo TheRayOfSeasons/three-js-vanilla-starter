@@ -108,6 +108,28 @@ effect.addPlaneY(20, 100);
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
+class MouseEffect {
+  mousePosition = new THREE.Vector2();
+  /**
+   * @type {HTMLElement}
+   */
+  element = null;
+
+  constructor(element) {
+    this.element = element;
+    window.addEventListener('mousemove', event => {
+      this.mousePosition.x = event.pageX - (this.element.clientWidth * 0.5);
+      this.mousePosition.y = event.pageY - (this.element.clientHeight * 0.5);
+      this.element.style.transform = `translate(${this.mousePosition.x}px, ${this.mousePosition.y}px)`;
+    });
+  }
+
+  update() {
+  }
+}
+
+const mouseEffect = new MouseEffect(document.getElementById('mouse-follower'));
+
 // render
 renderer.setAnimationLoop(time => {
   controls.update();

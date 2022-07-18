@@ -120,6 +120,11 @@ function-bind@^1.1.1:
   resolved "https://registry.yarnpkg.com/function-bind/-/function-bind-1.1.1.tgz#a56899d3ea3c9bab874bb9773b7c5ede92f4895d"
   integrity sha512-yIovAzMX49sF8Yl58fSCWJ5svSLuaibPxXQJFLmBObTuCr0Mf1KiPopGM9NiFjiYBCbfaa2Fh6breQ6ANVTI0A==
 
+gsap@^3.10.4:
+  version "3.10.4"
+  resolved "https://registry.yarnpkg.com/gsap/-/gsap-3.10.4.tgz#db89a6b8f6d5cb76e274eae822cbc1aa4d31e88f"
+  integrity sha512-6QatdkKxXCMfvCW4rM++0RqyLQAzFX5nwl3yHS0XPgkZBkiSEY3VZVbMltrdtsbER/xZonLtyHt684wRp4erlQ==
+
 has@^1.0.3:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/has/-/has-1.0.3.tgz#722d7cbfc1f6aa8241f16dd814e011e1f41e8796"
@@ -157,6 +162,11 @@ postcss@^8.4.5:
     nanoid "^3.2.0"
     picocolors "^1.0.0"
     source-map-js "^1.0.2"
+
+postprocessing@^6.28.4:
+  version "6.28.4"
+  resolved "https://registry.yarnpkg.com/postprocessing/-/postprocessing-6.28.4.tgz#03dc2b5c546ef26bdd963af1ea8f75c933e88e34"
+  integrity sha512-xVw7wT9H4s/f/AWS+u3FssIZ1iMY632zweCHqcNZ1ydFChCWeHcWOpEPx0dQz2DMIUlZclFW9WmwMJQxESI+cQ==
 
 resolve@^1.20.0:
   version "1.22.0"

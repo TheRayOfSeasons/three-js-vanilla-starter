@@ -48,6 +48,7 @@ const camera = new THREE.PerspectiveCamera(
   canvasWidth / canvasHeight
 );
 camera.position.z = 5;
+camera.far = 50000;
 camera.layers.enableAll();
 
 class Entity {
@@ -204,7 +205,8 @@ for (const entity of entities) {
 mainMesh2.mesh.position.x = 5;
 
 // controls
-const controls = new OrbitControls(camera, canvas);
+const overlay = document.querySelector('.shadow');
+const controls = new OrbitControls(camera, overlay);
 controls.enableDamping = true;
 
 // postprocessing

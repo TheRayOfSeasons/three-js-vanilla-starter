@@ -1,9 +1,36 @@
 html, body {
   margin: 0;
   padding: 0;
+  background-color: black;
 }
 
-canvas {
+#canvas-container {
+  position: relative;
+  width: 500px;
+  height: 500px;
+  border-radius: 50px;
+  overflow: hidden;
+}
+
+#app {
+  position: absolute;
+  z-index: 0;
+}
+
+.shadow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50px;
+  z-index: 1;
+  box-shadow: 0px 0px 50px #000000 inset;
+}
+
+.main-container {
   width: 100%;
   height: 100vh;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
 }

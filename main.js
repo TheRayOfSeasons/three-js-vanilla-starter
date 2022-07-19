@@ -28,32 +28,35 @@ const camera = new THREE.PerspectiveCamera(
   75,
   canvasWidth / canvasHeight
 );
-camera.position.z = 3;
+camera.position.set(
+   -1.550989197206717,
+   3.962605827080429,
+   -1.8985681396337881
+);
+camera.rotation.set(
+  -2.0176017523042376,
+  -0.33932963677445815,
+  -2.5344191031539363,
+);
+class Cubes {
+  parameters = {
+    count: {
+      length: 22,
+      width: 17
+    },
+    gap: 0,
+    offset: -2
+  }
 
-
-class Cube {
   constructor() {
-    this.parentCube = new THREE.Object3D();
-
-    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(128, {
-      generateMipmaps: true,
-      minFilter: THREE.LinearMipMapLinearFilter
-    });
-    this.cubeCamera = new THREE.CubeCamera(0.1, 100000, cubeRenderTarget);
-    this.parentCube.add(this.cubeCamera);
-
     // mesh
-    const geometry = new RoundedBoxGeometry(1, 1, 1, 10, 10);
+    const geometry = new RoundedBoxGeometry(1, 1, 1, 10, 0.1);
 
-    const material = new THREE.MeshStandardMaterial({
-      color: '#ffffff',
-      envMap: cubeRenderTarget.texture,
-      roughness: 0,
-      metalness: 1
-    });
+    const material = new THREE.MeshBasicMaterial();
 
     material.onBeforeCompile = (shader) => {
-      shader.uniforms.uGlowColor = { value: new THREE.Color('#0000ff') };
+      shader.uniforms.uBaseColor = { value: new THREE.Color('#000000') };
+      shader.uniforms.uBorderThickness = { value: 0.01 };
       shader.vertexShader = `
         varying vec2 vUv;
 
@@ -62,13 +65,14 @@ class Cube {
         }`)}
       `;
       shader.fragmentShader = shader.fragmentShader.replace('}', `
-        vec3 stepBorder = StepBorder(vUv, 0.1);
+        vec3 stepBorder = StepBorder(vUv, uBorderThickness);
         float t = (stepBorder.x * stepBorder.y * stepBorder.z) / 3.0;
-        vec3 color = mix(uGlowColor, gl_FragColor.rgb, stepBorder);
+        vec3 color = mix(gl_FragColor.rgb, uBaseColor, stepBorder);
         gl_FragColor = vec4(color, gl_FragColor.a);
       }`)
       shader.fragmentShader = `
-        uniform vec3 uGlowColor;
+        uniform float uBorderThickness;
+        uniform vec3 uBaseColor;
 
         varying vec2 vUv;
 
@@ -99,23 +103,86 @@ class Cube {
         }
       `;
     }
-    this.mesh = new THREE.Mesh(geometry, material);
-    this.parentCube.add(this.mesh);
-    scene.add(this.parentCube);
+
+    const count = this.count;
+
+    this.mesh = new THREE.InstancedMesh(geometry, material, count);
+    this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+    this.dummy = new THREE.Object3D();
+    this.position = new THREE.Vector3();
+    this.quaternion = new THREE.Quaternion();
+    this.rotation = new THREE.Euler();
+    this.destination = new THREE.Vector3();
+    this.delays = [];
+    this.originalPositions = [];
+    let i = 0;
+
+    const length = this.parameters.count.length;
+    const width = this.parameters.count.width;
+    const gap = this.parameters.gap;
+    for (let x = 0; x < length; x++) {
+      for (let y = 0; y < width; y++) {
+        const originalPosition = new THREE.Vector3(
+          x - ((length + (length * gap)) / 2),
+          0,
+          y - ((width + (width * gap)) / 2),
+        );
+        this.dummy.position.copy(originalPosition);
+        this.originalPositions.push(originalPosition);
+        this.dummy.updateMatrix();
+        const index = i++;
+        this.mesh.setMatrixAt(index, this.dummy.matrix);
+        this.mesh.setColorAt(index, new THREE.Color('#0000ff'));
+        this.delays.push(Math.random() * 2);
+      }
+    }
+    scene.add(this.mesh);
   }
+
+  get count() {
+    return this.parameters.count.length * this.parameters.count.width;
+  }
+
   update(time) {
-    this.cubeCamera.update(renderer, scene);
+    const count = this.count;
+    const width = this.parameters.count.width;
+    const gap = this.parameters.gap;
+    for (let i = 0; i < count; i++) {
+      this.mesh.getMatrixAt(i, this.dummy.matrix);
+      this.position.setFromMatrixPosition(this.dummy.matrix);
+      this.rotation.setFromRotationMatrix(this.dummy.matrix);
+      const threshold = ((width + (width * gap)) / 2);
+      if (this.position.z >= threshold) {
+        this.position.y = 0;
+        this.position.z = -threshold;
+        this.rotation.set(0, 0, 0);
+        // this.dummy.matrix.makeRotationFromEuler(this.rotation);
+      }
+      else {
+        const distance = threshold - this.position.z;
+        this.position.z = THREE.MathUtils.lerp(this.position.z, threshold, Math.atan2(0.02, distance));
+      }
+      if (this.position.z >= this.parameters.offset + (this.delays[i] - 0.5)) {
+        // this.rotation.set(
+        //   this.rotation.x,
+        //   THREE.MathUtils.lerp(this.rotation.y, Math.PI * 0.5, 0.05),
+        //   this.rotation.z,
+        // );
+        this.dummy.matrix.makeRotationFromEuler(this.rotation);
+        this.position.y = THREE.MathUtils.lerp(this.position.y, 2.0, 0.01);
+        this.quaternion.setFromEuler(this.rotation);
+      }
+      this.dummy.matrix.setPosition(this.position);
+      this.mesh.setMatrixAt(i, this.dummy.matrix);
+      this.mesh.instanceMatrix.needsUpdate = true;
+    }
   }
 }
 
 const entities = [
   (() => {
-    const cube = new Cube();
-    return cube;
-  })(),
-  (() => {
-    const cube = new Cube();
-    cube.parentCube.position.set(-1, -1, 0);
+    const cube = new Cubes();
     return cube;
   })(),
 ];
@@ -123,6 +190,7 @@ const entities = [
 // controls
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
+controls.enablePan = true;
 
 
 // postprocessing
@@ -143,17 +211,10 @@ effectComposer.addPass(renderPass);
 effectComposer.addPass(smaaPass);
 effectComposer.addPass(bloomPass);
 
-
-const sphereParent = new THREE.Object3D;
-const sphereGeom = new THREE.SphereBufferGeometry(0.1, 64, 32);
-const sphereMaterial = new THREE.MeshPhongMaterial({
-  color: '#ffffff',
-  emissive: '#ffffff'
+document.addEventListener('click', event => {
+  console.log(camera.position);
+  console.log(camera.rotation);
 });
-const sphere = new THREE.Mesh(sphereGeom, sphereMaterial);
-sphereParent.add(sphere);
-sphere.position.x = 2;
-scene.add(sphereParent);
 
 // render
 renderer.setAnimationLoop(time => {
@@ -161,7 +222,6 @@ renderer.setAnimationLoop(time => {
   for (const entity of entities) {
     entity.update(time);
   }
-  sphereParent.rotation.y = time * 0.001;
   try {
     renderer.clear();
     effectComposer.render();

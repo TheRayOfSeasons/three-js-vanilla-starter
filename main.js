@@ -5,6 +5,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry';
 
 const canvas = document.getElementById('app');
 
@@ -29,60 +30,95 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.z = 3;
 
-// mesh
-const geometry = new THREE.BoxBufferGeometry(1, 1, 1);
-// const material = new THREE.MeshNormalMaterial();
-const material = new THREE.ShaderMaterial({
-  uniforms: {
-    uBaseColor: { value: new THREE.Color('#000000') },
-    uLineColor: { value: new THREE.Color('#0000ff') },
-  },
-  vertexShader: `
-    varying vec2 vUv;
 
-    void main()
-    {
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+class Cube {
+  constructor() {
+    this.parentCube = new THREE.Object3D();
+
+    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(128, {
+      generateMipmaps: true,
+      minFilter: THREE.LinearMipMapLinearFilter
+    });
+    this.cubeCamera = new THREE.CubeCamera(0.1, 100000, cubeRenderTarget);
+    this.parentCube.add(this.cubeCamera);
+
+    // mesh
+    const geometry = new RoundedBoxGeometry(1, 1, 1, 10, 10);
+
+    const material = new THREE.MeshStandardMaterial({
+      color: '#ffffff',
+      envMap: cubeRenderTarget.texture,
+      roughness: 0,
+      metalness: 1
+    });
+
+    material.onBeforeCompile = (shader) => {
+      shader.uniforms.uGlowColor = { value: new THREE.Color('#0000ff') };
+      shader.vertexShader = `
+        varying vec2 vUv;
+
+        ${shader.vertexShader.replace('}', `
+          vUv = uv;
+        }`)}
+      `;
+      shader.fragmentShader = shader.fragmentShader.replace('}', `
+        vec3 stepBorder = StepBorder(vUv, 0.1);
+        float t = (stepBorder.x * stepBorder.y * stepBorder.z) / 3.0;
+        vec3 color = mix(uGlowColor, gl_FragColor.rgb, stepBorder);
+        gl_FragColor = vec4(color, gl_FragColor.a);
+      }`)
+      shader.fragmentShader = `
+        uniform vec3 uGlowColor;
+
+        varying vec2 vUv;
+
+        ${shader.fragmentShader
+          .replace('void main() {', `
+            //creates a sharp border using step()
+            vec3 StepBorder(in vec2 _uv, in float _width)
+            {
+              vec2 bl = step(vec2(_width),_uv); // bottom-left
+              vec2 tr = step(vec2(_width),1.0-_uv);   // top-right
+                //botom left && top right
+                vec3 pct = vec3(bl.x * bl.y * tr.x * tr.y);
+                return pct;
+            }
+
+            //creates a soft border using smoothstep()
+            vec3 SmoothBorder(in vec2 _uv, in float _start, in float _end)
+            {
+              vec2 bl = smoothstep(vec2(_start), vec2(_end), _uv);// bottom-left
+              vec2 tr = smoothstep(vec2(_start),vec2(_end),1.0-_uv);// top-right
+                //botom left && top right
+              vec3 pct = vec3(bl.x * bl.y * tr.x * tr.y);
+                return pct;
+            }
+
+            void main() {
+          `)
+        }
+      `;
     }
-  `,
-  fragmentShader: `
-    uniform vec3 uBaseColor;
-    uniform vec3 uLineColor;
+    this.mesh = new THREE.Mesh(geometry, material);
+    this.parentCube.add(this.mesh);
+    scene.add(this.parentCube);
+  }
+  update(time) {
+    this.cubeCamera.update(renderer, scene);
+  }
+}
 
-    varying vec2 vUv;
-
-    //creates a sharp border using step()
-    vec3 StepBorder(in vec2 _uv, in float _width)
-    {
-      vec2 bl = step(vec2(_width),_uv); // bottom-left
-      vec2 tr = step(vec2(_width),1.0-_uv);   // top-right
-        //botom left && top right
-        vec3 pct = vec3(bl.x * bl.y * tr.x * tr.y);
-        return pct;
-    }
-
-    //creates a soft border using smoothstep()
-    vec3 SmoothBorder(in vec2 _uv, in float _start, in float _end)
-    {
-      vec2 bl = smoothstep(vec2(_start), vec2(_end), _uv);// bottom-left
-      vec2 tr = smoothstep(vec2(_start),vec2(_end),1.0-_uv);// top-right
-        //botom left && top right
-      vec3 pct = vec3(bl.x * bl.y * tr.x * tr.y);
-        return pct;
-    }
-
-    void main()
-    {
-      vec3 stepBorder = StepBorder(vUv, 0.1);
-      float t = (stepBorder.x * stepBorder.y * stepBorder.z) / 3.0;
-      vec3 color = mix(uLineColor, uBaseColor, stepBorder);
-      gl_FragColor = vec4(color, 1.0);
-    }
-  `
-})
-const mesh = new THREE.Mesh(geometry, material);
-scene.add(mesh);
+const entities = [
+  (() => {
+    const cube = new Cube();
+    return cube;
+  })(),
+  (() => {
+    const cube = new Cube();
+    cube.parentCube.position.set(-1, -1, 0);
+    return cube;
+  })(),
+];
 
 // controls
 const controls = new OrbitControls(camera, canvas);
@@ -107,11 +143,25 @@ effectComposer.addPass(renderPass);
 effectComposer.addPass(smaaPass);
 effectComposer.addPass(bloomPass);
 
+
+const sphereParent = new THREE.Object3D;
+const sphereGeom = new THREE.SphereBufferGeometry(0.1, 64, 32);
+const sphereMaterial = new THREE.MeshPhongMaterial({
+  color: '#ffffff',
+  emissive: '#ffffff'
+});
+const sphere = new THREE.Mesh(sphereGeom, sphereMaterial);
+sphereParent.add(sphere);
+sphere.position.x = 2;
+scene.add(sphereParent);
+
 // render
 renderer.setAnimationLoop(time => {
   controls.update();
-  mesh.rotation.y = time * 0.001;
-
+  for (const entity of entities) {
+    entity.update(time);
+  }
+  sphereParent.rotation.y = time * 0.001;
   try {
     renderer.clear();
     effectComposer.render();

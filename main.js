@@ -1,6 +1,8 @@
 import './style.css';
 import * as THREE from 'three';
-
+import { Cube } from './src/cube';
+import { Controls } from './src/controls';
+import { Particles } from './src/particles';
 
 const canvas = document.getElementById('app');
 
@@ -23,17 +25,24 @@ const camera = new THREE.PerspectiveCamera(
   75,
   canvasWidth / canvasHeight
 );
-camera.position.z = 3;
+camera.position.z = 12;
 
-// mesh
-const geometry = new THREE.BoxBufferGeometry(1, 1, 1);
-const material = new THREE.MeshNormalMaterial();
-const mesh = new THREE.Mesh(geometry, material);
-scene.add(mesh);
+const entities = [
+  // new Cube(),
+  new Controls(camera, canvas),
+  new Particles()
+];
+for (const entity of entities) {
+  entity.start();
+  scene.add(entity);
+}
+
 
 // render
 renderer.setAnimationLoop(time => {
-  mesh.rotation.y = time * 0.001;
+  for (const entity of entities) {
+    entity.update(time);
+  }
   renderer.render(scene, camera);
 });
 

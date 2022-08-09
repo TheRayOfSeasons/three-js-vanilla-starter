@@ -1,50 +1,158 @@
 import './style.css';
 import * as THREE from 'three';
-
-
-const canvas = document.getElementById('app');
-
-let canvasHeight = canvas.parentElement.clientHeight;
-let canvasWidth = canvas.parentElement.clientWidth;
-
-// renderer
-const renderer = new THREE.WebGLRenderer({
-  antialias: true,
-  canvas
-});
-renderer.setSize(canvasWidth, canvasHeight);
-renderer.setClearColor(0x000000, 1.0);
-
-// scene
-const scene = new THREE.Scene();
-
-// camera
-const camera = new THREE.PerspectiveCamera(
-  75,
-  canvasWidth / canvasHeight
-);
-camera.position.z = 3;
+import anime from 'animejs';
+import { createScene } from './src/scene';
 
 // mesh
-const geometry = new THREE.BoxBufferGeometry(1, 1, 1);
-const material = new THREE.MeshNormalMaterial();
-const mesh = new THREE.Mesh(geometry, material);
-scene.add(mesh);
+const createLinePlaneGeometry = (length, height) => {
+  const heightOffset = height / 2;
+  const lengthOffset = length / 2;
 
-// render
-renderer.setAnimationLoop(time => {
-  mesh.rotation.y = time * 0.001;
-  renderer.render(scene, camera);
-});
+  const points = [
+    new THREE.Vector3(-lengthOffset, heightOffset, 0),
+    new THREE.Vector3(lengthOffset, heightOffset, 0),
+    new THREE.Vector3(lengthOffset, -heightOffset, 0),
+    new THREE.Vector3(-lengthOffset, -heightOffset, 0),
+    new THREE.Vector3(-lengthOffset, heightOffset, 0),
+  ];
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  return geometry;
+}
 
-// handle responsiveness
-window.addEventListener('resize', event => {
-  canvasHeight = canvas.parentElement.clientHeight;
-  canvasWidth = canvas.parentElement.clientWidth;
-  camera.aspect = canvasWidth / canvasHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(
-    canvasWidth,
-    canvasHeight
+const createLinedCube = (width, length, height, count, material) => {
+  const widthOffset = width / 2;
+
+  const geometry = createLinePlaneGeometry(length, height);
+  const object = new THREE.Object3D();
+  const lines = [];
+  for (let i = 0; i < count; i++) {
+    const line = new THREE.Line(geometry, material);
+    const interpolant = i / count;
+    line.position.z = (width * interpolant) - widthOffset;
+    object.add(line);
+    lines.push(line);
+  }
+  return { lines, object };
+}
+
+const getPrefabricatedCube = () => {
+  const material = new THREE.LineBasicMaterial({ color: '#ffffff' });
+  const linedCube = createLinedCube(10, 10, 10, 20, material);
+  return linedCube;
+}
+
+
+(() => {
+  const linedCube = getPrefabricatedCube();
+  const timeline = new anime.timeline({
+    autoplay: true,
+    easing: 'easeInOutQuart',
+    loop: true,
+    direction: 'alternate'
+  });
+  createScene(
+    document.getElementById('app-1'),
+    (renderer, scene) => {
+      scene.add(linedCube.object);
+      let offset = 0;
+      for (let i = linedCube.lines.length - 1; i >= 0; i--) {
+        linedCube.lines[i].position.y = -20;
+        timeline.add({
+          targets: linedCube.lines[i].position,
+          y: 0,
+          duration: 1000
+        }, offset);
+        offset += 50;
+      }
+    },
+    (time) => {
+    }
   );
-});
+})();
+
+(() => {
+  const linedCube = getPrefabricatedCube();
+  const timeline = new anime.timeline({
+    autoplay: true,
+    easing: 'easeInOutQuad',
+    loop: true,
+    direction: 'alternate'
+  });
+  createScene(
+    document.getElementById('app-2'),
+    (renderer, scene) => {
+      scene.add(linedCube.object);
+      let offset = 0;
+      for (let i = 0; i < linedCube.lines.length; i++) {
+        timeline.add({
+          targets: linedCube.lines[i].rotation,
+          z: Math.PI * 0.5,
+          duration: 1000
+        }, offset);
+        offset += 50;
+      }
+    },
+    (time) => {
+    }
+  );
+})();
+
+(() => {
+  const linedCube = getPrefabricatedCube();
+  createScene(
+    document.getElementById('app-3'),
+    (renderer, scene) => {
+      scene.add(linedCube.object);
+    },
+    (time) => {
+      for (let i = 0; i < linedCube.lines.length; i++) {
+        linedCube.lines[i].rotation.z = Math.sin(time * 0.001) * (i + 1) * 0.1;
+      }
+    }
+  );
+})();
+
+(() => {
+  const linedCube = getPrefabricatedCube();
+  createScene(
+    document.getElementById('app-4'),
+    (renderer, scene) => {
+      scene.add(linedCube.object);
+    },
+    (time) => {
+      for (let i = 0; i < linedCube.lines.length; i++) {
+        linedCube.lines[i].rotation.z = (time * 0.001 * (i + 1)) * 0.05;
+      }
+    }
+  );
+})();
+
+(() => {
+  const linedCube = getPrefabricatedCube();
+  createScene(
+    document.getElementById('app-5'),
+    (renderer, scene) => {
+      scene.add(linedCube.object);
+    },
+    (time) => {
+      for (let i = 0; i < linedCube.lines.length; i++) {
+        linedCube.lines[i].position.y = Math.sin((time + i * 100) * 0.0025) * 2;
+      }
+    }
+  );
+})();
+
+(() => {
+  const linedCube = getPrefabricatedCube();
+  createScene(
+    document.getElementById('app-6'),
+    (renderer, scene) => {
+      scene.add(linedCube.object);
+    },
+    (time) => {
+      for (let i = 0; i < linedCube.lines.length; i++) {
+        linedCube.lines[i].position.y = Math.sin(time * 0.001 * (i + 10)) * 0.1;
+      }
+    }
+  );
+})();

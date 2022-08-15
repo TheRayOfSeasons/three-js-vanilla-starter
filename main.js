@@ -77,6 +77,12 @@ const otherMaterial = new THREE.ShaderMaterial({
 
     ${snoise}
 
+    vec4 circle(vec2 uv, vec2 pos, float rad, vec3 color) {
+      float d = length(pos - uv) - rad;
+      float t = clamp(d, 0.0, 1.0);
+      return vec4(color, 1.0 - t);
+    }
+
     void useSnoise(vec2 uv, float time)
     {
       float t = time;
@@ -94,14 +100,21 @@ const otherMaterial = new THREE.ShaderMaterial({
         clamp(color.g, 0.0, 1.0),
         clamp(color.b, 0.75, 1.0)
       );
-      vec3 finalColor = mix(color2, color1, uMix);
+      vec3 finalColor = mix(color1, color2, uMix);
 
       gl_FragColor = vec4(finalColor, 1.0);
     }
 
-    void main()
+    vec3 rgb(float r, float g, float b)
+    {
+      return vec3(r / 255.0, g / 255.0, b / 255.0);
+    }
+
+    void noisePass()
     {
       vec2 uv = gl_FragCoord.xy / uResolution;
+      vec2 center = uv * 0.5;
+      float radius = 0.25 * uv.y;
       uv *= uZoom;
       float time = uTime * 0.0005;
 
@@ -109,8 +122,32 @@ const otherMaterial = new THREE.ShaderMaterial({
         clamp(uMousePosition.x, -0.5, 0.5),
         clamp(uMousePosition.y, -0.5, 0.5)
       );
-      // useFractalNoise(uv, time);
       useSnoise(uv, time);
+    }
+
+    void circlePass()
+    {
+      // // Blend the two
+      // gl_FragColor = mix(layer1, layer2, layer2.a);
+      vec2 uv = gl_FragCoord.xy;
+      vec2 center = uResolution.xy * 0.5;
+      float radius = 0.25 * uResolution.y;
+
+        // Background layer
+      vec4 layer1 = vec4(rgb(210.0, 222.0, 228.0), 1.0);
+      
+      // Circle
+      vec3 red = rgb(225.0, 95.0, 60.0);
+      vec4 layer2 = circle(uv, center, radius, red);
+      
+      // Blend the two
+      gl_FragColor = mix(gl_FragColor, vec4(0.0, 0.0, 0.0, 0.5), layer2.a);
+    }
+
+    void main()
+    {
+      noisePass();
+      // circlePass();
     }
   `
 });
@@ -120,13 +157,14 @@ otherScene.add(otherMesh);
 const pmremGenerator = new THREE.PMREMGenerator( renderer );
 pmremGenerator.compileEquirectangularShader();
 scene.environment = renderTarget.texture;
+// scene.background = renderTarget.texture;
 
 // mesh
 const geometry = new THREE.IcosahedronBufferGeometry(10, 64);
 const options = {
   enableSwoopingCamera: false,
   enableRotation: true,
-  transmission: 0.75,
+  transmission: 1,
   thickness: 1.5,
   roughness: 0.07,
   envMapIntensity: 1.5
@@ -142,8 +180,9 @@ const material = new THREE.MeshPhysicalMaterial({
   thickness: options.thickness,
   roughness: options.roughness,
   // envMap: hdrEquirect,
-  envMap: renderTarget.texture,
-  // transparent: true
+  // envMap: renderTarget.texture,
+  opacity: 4,
+  transparent: true,
 });
 material.onBeforeCompile = shader => {
   shader.uniforms.uFrequency = { value: 2.4 };
@@ -155,10 +194,17 @@ material.onBeforeCompile = shader => {
   shader.uniforms.uTime = { value: 0 };
   shader.uniforms.uDepthColor = { value: new THREE.Color('#0458FF') };
   shader.uniforms.uSurfaceColor = { value: new THREE.Color('#F20089') };
+
   shader.vertexShader = shader.vertexShader.replace('}', `
     float distortion = (pnoise(normal * uDensity + uTime, vec3(10.)) * uStrength);
     vec3 pos = position + (normal * distortion);
     float angle = sin((uv.y * uFrequency) + uTime) * uAmplitude;
+
+    vPositionW = vec3(vec4(position, 1.0) * modelMatrix);
+		vNormalW = normalize(vec3(vec4(normal, 0.0) * modelMatrix));
+    vUv = uv;
+    vDistortion = distortion;
+
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.);
   }`);
   shader.vertexShader = shader.vertexShader.replace('void main() {', `
@@ -168,15 +214,67 @@ material.onBeforeCompile = shader => {
     uniform float uStrength;
     uniform float uTime;
 
+    varying float vDistortion;
+    varying vec2 vUv;
+    varying vec3 vPositionW;
+    varying vec3 vNormalW;
+
     ${utils}
 
     void main() {
   `);
+
+  // console.log(shader.fragmentShader);
+  // shader.fragmentShader = shader.fragmentShader.replace('}', `
+  //   float distort = vDistortion * 3.;
+
+  //   vec3 brightness = vec3(.1, .1, .9);
+  //   vec3 contrast = vec3(.3, .3, .3);
+  //   vec3 oscilation = vec3(.5, .5, .9);
+  //   vec3 phase = vec3(.9, .1, .8);
+
+  //   vec3 color = cosPalette(distort, brightness, contrast, oscilation, phase);
+
+  //   float fresnelValue = fresnel();
+
+  //   vec3 finalColor = mix(uDepthColor, uSurfaceColor, vDistortion);
+  //   finalColor *= fresnelValue;
+  //   float opacity = clamp(finalColor.r + finalColor.g + finalColor.b, 0.0, 1.0);
+  //   gl_FragColor += vec4(finalColor, opacity);
+  //   // gl_FragColor += vec4(uSurfaceColor * fresnelValue, min(uOpacity, 1.));
+  // }`);
+  // shader.fragmentShader = shader.fragmentShader.replace('void main() {', `
+  //   uniform float uOpacity;
+  //   uniform float uDeepPurple;
+  //   uniform vec3 uDepthColor;
+  //   uniform vec3 uSurfaceColor;
+
+  //   varying float vDistortion;
+  //   varying vec2 vUv;
+
+  //   varying vec3 vPositionW;
+  //   varying vec3 vNormalW;
+
+  //   vec3 cosPalette(float t, vec3 a, vec3 b, vec3 c, vec3 d) {
+  //     return a + b * cos(6.28318 * (c * t + d));
+  //   }
+
+  //   float fresnel() {
+  //     vec3 viewDirectionW = normalize(cameraPosition - vPositionW) * 1.0;
+  //     float intensity = 1.5;
+  //     float fresnelTerm = dot(viewDirectionW, vNormalW) * intensity;
+  //     fresnelTerm = clamp(1.0 - fresnelTerm, 0., 1.);
+  //     return fresnelTerm;
+  //   }
+
+  //   void main() {
+  // `);
 }
 const mesh = new THREE.Mesh(geometry, material);
 scene.add(mesh);
 
 // const directionalLight = new THREE.DirectionalLight('#ffffff');
+// directionalLight.position.set(2, 2, 2);
 // scene.add(directionalLight);
 
 const otherM = new THREE.Mesh(
@@ -184,7 +282,7 @@ const otherM = new THREE.Mesh(
   new THREE.MeshNormalMaterial()
 );
 scene.add(otherM);
-otherM.position.set(10, 0, -10);
+otherM.position.set(10, 0, -30);
 
 // controls
 const controls = new OrbitControls(camera, canvas);
@@ -200,7 +298,7 @@ renderer.setAnimationLoop(time => {
   renderer.clear();
   renderer.render(otherScene, otherCamera, renderTarget);
 
-  material.envMap = renderTarget.texture;
+  // material.envMap = renderTarget.texture;
 
   // renderer.setRenderTarget(null);
   // renderer.clear();

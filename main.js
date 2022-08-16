@@ -11,10 +11,10 @@ let canvasWidth = canvas.parentElement.clientWidth;
 // renderer
 const renderer = new THREE.WebGLRenderer({
   antialias: true,
+  alpha: true,
   canvas
 });
 renderer.setSize(canvasWidth, canvasHeight);
-renderer.setClearColor(0x000000, 1.0);
 
 // scene
 const scene = new THREE.Scene();
@@ -26,29 +26,23 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.z = 20;
 
-
-function floorPowerOfTwo( value ) {
-
-	return Math.pow( 2, Math.floor( Math.log( value ) / Math.LN2 ) );
-
-}
-
 // material
 const material = new THREE.MeshPhysicalMaterial({
-  transmission: 1,
-  thickness: 4.5,
+  color: '#ffffff',
+  transmission: 0.9,
+  thickness: 2.5,
   roughness: 0.07,
 });
 let mainShader;
 material.onBeforeCompile = shader => {
   shader.uniforms.uFrequency = { value: 2.4 };
   shader.uniforms.uAmplitude = { value: 0.4 };
-  shader.uniforms.uDensity = { value: 0.8 };
+  shader.uniforms.uDensity = { value: 1.2 };
   shader.uniforms.uStrength = { value: 1.8 };
   shader.uniforms.uDeepPurple = { value: 1 };
   shader.uniforms.uOpacity = { value: 0.1 };
   shader.uniforms.uTime = { value: 0 };
-  shader.uniforms.uFresnelIntensity = { value: 2 };
+  shader.uniforms.uFresnelIntensity = { value: 3 };
   shader.uniforms.uDepthColor = { value: new THREE.Color('#0458FF') };
   shader.uniforms.uSurfaceColor = { value: new THREE.Color('#F20089') };
   shader.vertexShader = shader.vertexShader.replace('}', `
@@ -63,8 +57,9 @@ material.onBeforeCompile = shader => {
     vUv = uv;
     vDistortion = distortion;
 
-    vPositionW = vec3( vec4( position, 1.0 ) * modelMatrix);
-    vNormalW = normalize( vec3( vec4( normal, 0.0 ) * modelMatrix ) );
+    // vPositionW = vec3( vec4( position, 1.0 ) * modelMatrix);
+    // vNormalW = normalize( vec3( vec4( normal, 0.0 ) * modelMatrix ) );
+    vElevation = distance(position, pos);
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.);
   }`);
@@ -76,6 +71,7 @@ material.onBeforeCompile = shader => {
     uniform float uTime;
 
     varying float vDistortion;
+    varying float vElevation;
     varying vec2 vUv;
 
     // fresnel
@@ -99,13 +95,24 @@ material.onBeforeCompile = shader => {
     float fresnelValue = fresnel();
 
     vec3 finalColor = mix(uDepthColor, uSurfaceColor, vDistortion);
-    finalColor *= fresnelValue;
     float opacity = clamp(finalColor.r + finalColor.g + finalColor.b, 0.0, 1.0);
     vec4 compiledColor = vec4(finalColor, opacity);
     compiledColor += vec4(uSurfaceColor * fresnelValue, min(uOpacity, 1.));
 
+    float multiplier = vElevation * 0.1;
+    gl_FragColor += vec4(compiledColor.r * multiplier, compiledColor.g * multiplier, compiledColor.b * multiplier, 0.0);
+    // gl_FragColor += vec4(uDepthColor.r * multiplier, uDepthColor.g * multiplier, uDepthColor.b * multiplier, 0.0);
+    // float centralBrightness = 0.5;
+    // gl_FragColor += vec4(centralBrightness * multiplier, centralBrightness * multiplier, centralBrightness * multiplier, 0.0);
+
     float t = (compiledColor.r + compiledColor.g + compiledColor.b) / 3.0;
-    gl_FragColor = mix(gl_FragColor, compiledColor, t);
+    finalColor = mix(uDepthColor, uSurfaceColor, vDistortion);
+    finalColor *= fresnelValue;
+    opacity = clamp(finalColor.r + finalColor.g + finalColor.b, 0.0, 1.0);
+    compiledColor = vec4(finalColor, opacity);
+    compiledColor += vec4(uSurfaceColor * fresnelValue, min(uOpacity, 1.));
+
+    gl_FragColor += mix(gl_FragColor, compiledColor, t);
   }`);
   shader.fragmentShader = shader.fragmentShader.replace('void main() {', `
     uniform float uOpacity;
@@ -116,6 +123,7 @@ material.onBeforeCompile = shader => {
     uniform vec3 uSurfaceColor;
   
     varying float vDistortion;
+    varying float vElevation;
     varying vec2 vUv;
   
     varying vec3 vPositionW;
@@ -142,17 +150,21 @@ const geometry = new THREE.IcosahedronBufferGeometry(10, 64);
 const mesh = new THREE.Mesh(geometry, material);
 scene.add(mesh);
 
-(() => {
-  const geometry = new THREE.SphereBufferGeometry(10, 32, 16);
-  const material = new THREE.MeshNormalMaterial();
-  const mesh = new THREE.Mesh(geometry, material);
-  scene.add(mesh);
-  mesh.position.set(0, 0, -25);
-})()
+// (() => {
+//   const geometry = new THREE.SphereBufferGeometry(10, 32, 16);
+//   const material = new THREE.MeshNormalMaterial();
+//   const mesh = new THREE.Mesh(geometry, material);
+//   scene.add(mesh);
+//   mesh.position.set(0, 0, -25);
+// })()
 
 // controls
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
+
+// const directionalLight = new THREE.DirectionalLight('#ffffff');
+// directionalLight.position.set(0, 0, 2);
+// scene.add(directionalLight);
 
 // render
 renderer.setAnimationLoop(time => {

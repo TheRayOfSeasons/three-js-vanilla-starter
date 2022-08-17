@@ -6,24 +6,19 @@ const SCALE = 0.02;
 /**
  * @typedef {Object} CreateElementMeshProps
  * @property {HTMLElement} source
- * @property {HTMLElement} appendTo
- * @property {String} id
+ * @property {Number} scale
  */
 
 /**
  * 
  * @param {CreateElementMeshProps} param0 
  */
-export const createElementMesh = async ({ source, appendTo, id, scale=SCALE }) => {
-  const canvas = await html2canvas(source);
-  appendTo.textContent = '';
-  appendTo.appendChild(canvas);
-  canvas.id = id;
-
+export const createElementMesh = async ({ source, scale=SCALE }) => {
+  const texture = new THREE.CanvasTexture(source);
   const textGeometry = new THREE.PlaneBufferGeometry(window.innerWidth * scale, window.innerHeight * scale);
   const textMaterial = new THREE.ShaderMaterial({
     uniforms: {
-      uTexture: { value: new THREE.CanvasTexture(canvas) },
+      uTexture: { value: texture },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -48,6 +43,11 @@ export const createElementMesh = async ({ source, appendTo, id, scale=SCALE }) =
     `
   });
   const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-  source.style.display = 'none';
-  return textMesh;
+  // source.style.display = 'none';
+  return {
+    object: textMesh,
+    update: (time) => {
+      texture.needsUpdate = true;
+    }
+  };
 }

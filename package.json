@@ -10,7 +10,10 @@
     "vite": "^2.7.2"
   },
   "dependencies": {
+    "animejs": "^3.2.1",
+    "gsap": "^3.10.4",
     "html2canvas": "^1.4.1",
+    "stats-js": "^1.0.1",
     "three": "^0.137.5"
   }
 }

@@ -12,7 +12,6 @@ const createCubePiece = (size) => {
   });
 
   material.onBeforeCompile = shader => {
-    console.log(shader.fragmentShader);
     shader.uniforms.uLowColor = { value: new THREE.Color('#0458FF') };
     shader.uniforms.uHighColor = { value: new THREE.Color('#7209B7') };
 
@@ -53,9 +52,9 @@ export const createRubiksCube = () => {
   const gap = 2;
   const size = 15;
   const cubes = [];
-  for (let i = -1; i <= 1; i++) {
-    for (let j = -1; j <= 1; j++) {
-      for (let k = -1; k <= 1; k++) {
+  for (let i = -0.5; i <= 0.5; i++) {
+    for (let j = -0.5; j <= 0.5; j++) {
+      for (let k = -0.5; k <= 0.5; k++) {
         const mesh = createCubePiece(size);
         const x = (i * size);
         const y = (j * size);
@@ -74,10 +73,6 @@ export const createRubiksCube = () => {
   xLowAxle.position.set(-range, 0, 0);
   object.add(xLowAxle);
 
-  const xMidAxle = new THREE.Group();
-  xMidAxle.position.set(0, 0, 0);
-  object.add(xMidAxle);
-
   const xHighAxle = new THREE.Group();
   xHighAxle.position.set(range, 0, 0);
   object.add(xHighAxle);
@@ -86,10 +81,6 @@ export const createRubiksCube = () => {
   yLowAxle.position.set(0, -range, 0);
   object.add(yLowAxle);
 
-  const yMidAxle = new THREE.Group();
-  yMidAxle.position.set(0, 0, 0);
-  object.add(yMidAxle);
-
   const yHighAxle = new THREE.Group();
   yHighAxle.position.set(0, range, 0);
   object.add(yHighAxle);
@@ -97,10 +88,6 @@ export const createRubiksCube = () => {
   const zLowAxle = new THREE.Group();
   zLowAxle.position.set(0, 0, -range);
   object.add(zLowAxle);
-
-  const zMidAxle = new THREE.Group();
-  zMidAxle.position.set(0, 0, 0);
-  object.add(zMidAxle);
 
   const zHighAxle = new THREE.Group();
   zHighAxle.position.set(0, 0, range);
@@ -111,34 +98,18 @@ export const createRubiksCube = () => {
   const duration = 500;
   const easing = 'easeOutCubic';
   const targetRotation = Math.PI * 0.5;
+  const min = -6.5;
+  const max = 6.5;
   const moveLowX = () => {
     const targets = cubes.filter(cube => {
       cube.getWorldPosition(worldPosition);
-      return cube.position.x < -14;
+      return cube.position.x < min;
     });
     for (const piece of targets) {
       xLowAxle.attach(piece);
     }
     anime({
       targets: xLowAxle.rotation,
-      x: `+=${targetRotation}`,
-      easing,
-      complete: (anim) => {
-        moveRandom();
-      }
-    });
-  }
-
-  const moveMidX = () => {
-    const targets = cubes.filter(cube => {
-      cube.getWorldPosition(worldPosition);
-      return cube.position.x <= 1 && cube.position.x >= -1;
-    });
-    for (const piece of targets) {
-      xMidAxle.attach(piece);
-    }
-    anime({
-      targets: xMidAxle.rotation,
       x: `+=${targetRotation}`,
       easing,
       duration,
@@ -151,7 +122,7 @@ export const createRubiksCube = () => {
   const moveHighX = () => {
     const targets = cubes.filter(cube => {
       cube.getWorldPosition(worldPosition);
-      return cube.position.x > 14;
+      return cube.position.x > max;
     });
     for (const piece of targets) {
       xHighAxle.attach(piece);
@@ -170,7 +141,7 @@ export const createRubiksCube = () => {
   const moveLowY = () => {
     const targets = cubes.filter(cube => {
       cube.getWorldPosition(worldPosition);
-      return cube.position.y < -14;
+      return cube.position.y < min;
     });
     for (const piece of targets) {
       yLowAxle.attach(piece);
@@ -186,29 +157,10 @@ export const createRubiksCube = () => {
     });
   }
 
-  const moveMidY = () => {
-    const targets = cubes.filter(cube => {
-      cube.getWorldPosition(worldPosition);
-      return cube.position.y < 1 && cube.position.y > -1;
-    });
-    for (const piece of targets) {
-      yMidAxle.attach(piece);
-    }
-    anime({
-      targets: yMidAxle.rotation,
-      y: `+=${targetRotation}`,
-      easing,
-      duration,
-      complete: (anim) => {
-        moveRandom();
-      }
-    });
-  }
-
   const moveHighY = () => {
     const targets = cubes.filter(cube => {
       cube.getWorldPosition(worldPosition);
-      return cube.position.y > 14;
+      return cube.position.y > max;
     });
     for (const piece of targets) {
       yHighAxle.attach(piece);
@@ -227,26 +179,7 @@ export const createRubiksCube = () => {
   const moveLowZ = () => {
     const targets = cubes.filter(cube => {
       cube.getWorldPosition(worldPosition);
-      return cube.position.z < -14;
-    });
-    for (const piece of targets) {
-      zLowAxle.attach(piece);
-    }
-    anime({
-      targets: zLowAxle.rotation,
-      z: `+=${targetRotation}`,
-      easing,
-      duration,
-      complete: (anim) => {
-        moveRandom();
-      }
-    });
-  }
-
-  const moveMidZ = () => {
-    const targets = cubes.filter(cube => {
-      cube.getWorldPosition(worldPosition);
-      return cube.position.z < 1 && cube.position.z > -1;
+      return cube.position.z < min;
     });
     for (const piece of targets) {
       zLowAxle.attach(piece);
@@ -265,7 +198,7 @@ export const createRubiksCube = () => {
   const moveHighZ = () => {
     const targets = cubes.filter(cube => {
       cube.getWorldPosition(worldPosition);
-      return cube.position.z > 14;
+      return cube.position.z > max;
     });
     for (const piece of targets) {
       zHighAxle.attach(piece);
@@ -283,13 +216,13 @@ export const createRubiksCube = () => {
 
   const moveFunctions = [
     moveLowX,
-    moveMidX,
+    // moveMidX,
     moveHighX,
     moveLowY,
-    moveMidY,
+    // moveMidY,
     moveHighY,
     moveLowZ,
-    moveMidZ,
+    // moveMidZ,
     moveHighZ,
   ];
 

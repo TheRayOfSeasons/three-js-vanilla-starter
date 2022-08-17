@@ -6,6 +6,7 @@ import { createElementMesh } from './src/element-mesh';
 import { createBubble } from './src/bubble';
 import { bootstrapDynamicCanvas } from './src/dynamic-canvas-texture';
 import { bootstrapStaticCanvas } from './src/static-canvas-texture';
+import { createColorfulElementMesh } from './src/colorful-element-mesh';
 
 const threeCanvas = document.getElementById('app');
 const dynamicCanvas = document.getElementById('dynamic-canvas');
@@ -41,9 +42,10 @@ async function bootstrap() {
   controls.enableDamping = true;
   controls.enableZoom = false;
 
-  const dynamicTextMesh = await createElementMesh({
+  const dynamicTextMesh = await createColorfulElementMesh({
     source: dynamicCanvas,
-    scale: 0.038
+    scale: 0.038,
+    renderer
   })
   scene.add(dynamicTextMesh.object);
 

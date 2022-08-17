@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import html2canvas from 'html2canvas';
 
 const SCALE = 0.02;
 
@@ -43,7 +42,7 @@ export const createElementMesh = async ({ source, scale=SCALE }) => {
     `
   });
   const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-  // source.style.display = 'none';
+  source.style.display = 'none';
   return {
     object: textMesh,
     update: (time) => {

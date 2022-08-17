@@ -48,11 +48,9 @@ export const bootstrapDynamicCanvas = (canvas) => {
     clear();
     context.font = '10rem sans-serif';
     context.fillStyle = 'white';
-    context.strokeStyle = 'white';
     for (const word of values.words) {
-      context.strokeText(word.value, position.x, word.currentValue);
+      context.fillText(word.value, position.x, word.currentValue);
     }
-    console.log(values.words[0].currentValue);
   }
   return { update };
 }

@@ -9,7 +9,6 @@
 
   context.font = '10rem sans-serif';
   context.fillStyle = 'white';
-  context.strokeStyle = 'white';
-  context.strokeText('HELLO', 10, 200);
-  context.strokeText('MAJESTIC', 10, 400);
+  context.fillText('HELLO', 10, 200);
+  context.fillText('MAJESTIC', 10, 400);
 }

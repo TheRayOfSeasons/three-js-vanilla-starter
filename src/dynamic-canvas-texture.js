@@ -12,6 +12,7 @@ export const bootstrapDynamicCanvas = (canvas) => {
   context.beginPath();
   context.rect(10, 475, canvas.width, 150);
   context.clip();
+  context.imageSmoothingEnabled = true;
 
   const clear = () => {
     context.clearRect(0, 0, canvas.width, canvas.height);

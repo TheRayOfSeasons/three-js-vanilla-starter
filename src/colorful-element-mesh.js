@@ -56,7 +56,7 @@ export const createColorfulElementMesh = async ({ source, renderer, scale=SCALE 
 
       ${snoise}
 
-      void useSnoise(vec2 uv, float time)
+      vec3 useSnoise(vec2 uv, float time)
       {
         float t = time;
         float s1 = snoise(uv + t/2.0 + snoise(uv + snoise(uv + t/4.0) / 10.0));
@@ -74,8 +74,7 @@ export const createColorfulElementMesh = async ({ source, renderer, scale=SCALE 
           clamp(color.b, 0.75, 1.0)
         );
         vec3 finalColor = mix(color1, color2, uMix);
-
-        gl_FragColor = vec4(finalColor, 1.0);
+        return finalColor;
       }
 
       void main()
@@ -87,7 +86,8 @@ export const createColorfulElementMesh = async ({ source, renderer, scale=SCALE 
         vec2 uv = gl_FragCoord.xy / uResolution;
         uv *= uZoom;
         float time = uTime * 0.0005;
-        useSnoise(uv, time);
+        vec3 finalColor = useSnoise(uv, time);
+        gl_FragColor = vec4(finalColor * color.rgb, color.a);
       }
     `
   });

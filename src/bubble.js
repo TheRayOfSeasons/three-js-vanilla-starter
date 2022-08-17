@@ -12,12 +12,13 @@ export const createBubble = () => {
   material.onBeforeCompile = shader => {
     shader.uniforms.uFrequency = { value: 2.4 };
     shader.uniforms.uAmplitude = { value: 0.4 };
-    shader.uniforms.uDensity = { value: 1.2 };
-    shader.uniforms.uStrength = { value: 1.8 };
+    shader.uniforms.uDensity = { value: 1.8 };
+    shader.uniforms.uStrength = { value: 0.8 };
     shader.uniforms.uDeepPurple = { value: 1 };
     shader.uniforms.uOpacity = { value: 0.1 };
     shader.uniforms.uTime = { value: 0 };
-    shader.uniforms.uFresnelIntensity = { value: 3 };
+    shader.uniforms.uFresnelIntensity = { value: 2 };
+    shader.uniforms.uCentralBrightness = { value: 2.5 };
     shader.uniforms.uDepthColor = { value: new THREE.Color('#0458FF') };
     shader.uniforms.uSurfaceColor = { value: new THREE.Color('#F20089') };
     shader.vertexShader = shader.vertexShader.replace('}', `
@@ -74,7 +75,7 @@ export const createBubble = () => {
 
       float multiplier = vElevation * 0.1;
       gl_FragColor += vec4(compiledColor.r * multiplier, compiledColor.g * multiplier, compiledColor.b * multiplier, 0.0);
-      float centralBrightness = 0.5;
+      float centralBrightness = uCentralBrightness;
       gl_FragColor += vec4(centralBrightness * multiplier, centralBrightness * multiplier, centralBrightness * multiplier, 0.0);
 
       float t = (compiledColor.r + compiledColor.g + compiledColor.b) / 3.0;
@@ -90,6 +91,7 @@ export const createBubble = () => {
       uniform float uOpacity;
       uniform float uDeepPurple;
       uniform float uFresnelIntensity;
+      uniform float uCentralBrightness;
       uniform sampler2D uEnvMap;
       uniform vec3 uDepthColor;
       uniform vec3 uSurfaceColor;

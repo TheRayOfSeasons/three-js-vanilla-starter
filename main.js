@@ -1,5 +1,7 @@
 import './style.css';
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { createLines } from './src/lines';
 
 
 const canvas = document.getElementById('app');
@@ -24,16 +26,21 @@ const camera = new THREE.PerspectiveCamera(
   canvasWidth / canvasHeight
 );
 camera.position.z = 3;
+camera.near = 1;
+camera.far = 1000000;
 
 // mesh
-const geometry = new THREE.BoxBufferGeometry(1, 1, 1);
-const material = new THREE.MeshNormalMaterial();
-const mesh = new THREE.Mesh(geometry, material);
-scene.add(mesh);
+const lines = createLines();
+scene.add(lines.object);
+
+// controls
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
 
 // render
 renderer.setAnimationLoop(time => {
-  mesh.rotation.y = time * 0.001;
+  controls.update();
+  lines.update(time);
   renderer.render(scene, camera);
 });
 
